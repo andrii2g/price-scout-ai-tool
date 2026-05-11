@@ -5,4 +5,5 @@ public sealed record CliOptions(
     string OutputDirectory,
     string Country,
     string Language,
-    string Currency);
+    string Currency,
+    string OpenAiApiKey);

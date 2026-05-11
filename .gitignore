@@ -3,6 +3,7 @@
 ################################################################################
 
 /.dotnet-home
+/.nuget-packages
 /src/PriceScout.Cli/obj
 /src/PriceScout.Cli/bin
 /.vs

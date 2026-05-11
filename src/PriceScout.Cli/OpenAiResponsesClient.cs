@@ -9,15 +9,16 @@ public sealed class OpenAiResponsesClient(HttpClient httpClient)
 
     public async Task<string> CreateReportAsync(CliOptions options, CancellationToken cancellationToken)
     {
-        var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-        if (string.IsNullOrWhiteSpace(apiKey))
+        var settings = OpenAiSettingsResolver.Resolve(options);
+        if (string.IsNullOrWhiteSpace(settings.ApiKey))
         {
-            throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
+            throw new InvalidOperationException(
+                "OpenAI API key was not found. Provide --openai-api-key, set OPENAI_API_KEY, configure OpenAI:ApiKey in appsettings.json, or use user secrets while debugging.");
         }
 
-        var payload = OpenAiRequestFactory.Create(options);
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        var payload = OpenAiRequestFactory.Create(options, settings);
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{settings.BaseUrl.TrimEnd('/')}/v1/responses");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
         request.Content = JsonContent.Create(payload);
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);

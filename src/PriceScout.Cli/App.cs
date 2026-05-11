@@ -47,7 +47,9 @@ internal static class App
             Console.WriteLine($"Generated report Markdown: {result.MarkdownPath}");
             return 0;
         }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("OPENAI_API_KEY", StringComparison.Ordinal))
+        catch (InvalidOperationException ex) when (
+            ex.Message.Contains("OpenAI API key", StringComparison.Ordinal) ||
+            ex.Message.Contains("OPENAI_API_KEY", StringComparison.Ordinal))
         {
             Console.Error.WriteLine(ex.Message);
             return 2;

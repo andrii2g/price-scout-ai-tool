@@ -16,6 +16,7 @@ public sealed class CliParserTests
         Assert.Equal("en", result.Options.Language);
         Assert.Equal(string.Empty, result.Options.Country);
         Assert.Equal(string.Empty, result.Options.Currency);
+        Assert.Equal(string.Empty, result.Options.OpenAiApiKey);
     }
 
     [Fact]
@@ -34,5 +35,14 @@ public sealed class CliParserTests
 
         Assert.False(result.IsSuccess);
         Assert.Contains("Unknown option", result.ErrorMessage);
+    }
+
+    [Fact]
+    public void Parse_ApiKeyOption_IsAccepted()
+    {
+        var result = CliParser.Parse(["--search", "abc", "--openai-api-key", "secret"]);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("secret", result.Options!.OpenAiApiKey);
     }
 }

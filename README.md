@@ -5,7 +5,11 @@
 ## Requirements
 
 - .NET 10 SDK
-- `OPENAI_API_KEY`
+- OpenAI API key from one of:
+  - `--openai-api-key`
+  - `OPENAI_API_KEY`
+  - `src/PriceScout.Cli/appsettings.json` (`OpenAI:ApiKey`)
+  - user secrets while debugging
 
 ## Build
 
@@ -22,6 +26,20 @@ dotnet run --project src/PriceScout.Cli -- \
   --language uk \
   --currency UAH \
   --out ./reports
+```
+
+You can also pass the key explicitly:
+
+```bash
+dotnet run --project src/PriceScout.Cli -- \
+  --search "SONOFF Zigbee 3.0 USB Dongle Plus E" \
+  --openai-api-key "<your-key>"
+```
+
+For local debugging with user secrets:
+
+```bash
+dotnet user-secrets --project src/PriceScout.Cli set "OpenAI:ApiKey" "<your-key>"
 ```
 
 ## Output

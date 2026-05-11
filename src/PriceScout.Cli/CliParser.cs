@@ -18,6 +18,7 @@ public static class CliParser
         string country = string.Empty;
         string language = DefaultLanguage;
         string currency = string.Empty;
+        string openAiApiKey = string.Empty;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -73,6 +74,14 @@ public static class CliParser
 
                     currency = currencyValue.ToUpperInvariant();
                     break;
+                case "--openai-api-key":
+                    if (!TryReadValue(args, ref i, out var apiKeyValue))
+                    {
+                        return Failure("Missing value for --openai-api-key.", showUsage: true);
+                    }
+
+                    openAiApiKey = apiKeyValue;
+                    break;
                 default:
                     return Failure($"Unknown option: {args[i]}", showUsage: true);
             }
@@ -112,7 +121,8 @@ public static class CliParser
                 OutputDirectory: outputDirectory.Trim(),
                 Country: country,
                 Language: language.Trim(),
-                Currency: currency),
+                Currency: currency,
+                OpenAiApiKey: openAiApiKey),
             null,
             false);
     }
@@ -120,8 +130,8 @@ public static class CliParser
     public static string GetUsageText() =>
         """
         Usage:
-          price-scout-ai-tool --search "<text>" [--out <path>] [--country <code>] [--language <code>] [--currency <code>]
-          price-scout-ai-tool --in "<text>" [--out <path>] [--country <code>] [--language <code>] [--currency <code>]
+          price-scout-ai-tool --search "<text>" [--out <path>] [--country <code>] [--language <code>] [--currency <code>] [--openai-api-key <key>]
+          price-scout-ai-tool --in "<text>" [--out <path>] [--country <code>] [--language <code>] [--currency <code>] [--openai-api-key <key>]
 
         Options:
           --search <text>    Product/item description to research.
@@ -130,6 +140,7 @@ public static class CliParser
           --country <code>   Country hint such as UA, PL, DE, US.
           --language <code>  Preferred language. Default: en
           --currency <code>  Preferred currency such as UAH, EUR, USD.
+          --openai-api-key   OpenAI API key. Overrides config and environment.
           --help             Show usage information.
         """;
 

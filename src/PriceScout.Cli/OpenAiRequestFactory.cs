@@ -7,9 +7,12 @@ public static class OpenAiRequestFactory
 {
     public static object Create(CliOptions options)
     {
-        var model = Environment.GetEnvironmentVariable("OPENAI_MODEL");
-        model = string.IsNullOrWhiteSpace(model) ? "gpt-5.5" : model;
+        var settings = OpenAiSettingsResolver.Resolve(options);
+        return Create(options, settings);
+    }
 
+    public static object Create(CliOptions options, OpenAiSettings settings)
+    {
         var tool = new JsonObject
         {
             ["type"] = "web_search",
@@ -28,7 +31,7 @@ public static class OpenAiRequestFactory
 
         return new JsonObject
         {
-            ["model"] = model,
+            ["model"] = settings.Model,
             ["reasoning"] = new JsonObject
             {
                 ["effort"] = "low"
