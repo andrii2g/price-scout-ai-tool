@@ -10,3 +10,4 @@
 /src/PriceScout.Cli/obj
 /tests/PriceScout.Tests/bin
 /tests/PriceScout.Tests/obj
+/.tmp

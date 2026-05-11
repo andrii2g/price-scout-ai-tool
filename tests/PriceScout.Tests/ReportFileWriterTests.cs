@@ -10,6 +10,7 @@ public sealed class ReportFileWriterTests
     [Fact]
     public async Task WriteAsync_CreatesJsonAndMarkdownArtifacts()
     {
+        var cancellationToken = TestContext.Current.CancellationToken;
         var tempDirectory = Path.Combine(Path.GetTempPath(), "price-scout-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDirectory);
 
@@ -35,13 +36,13 @@ public sealed class ReportFileWriterTests
             };
 
             var options = new CliOptions("Example Product", tempDirectory, "UA", "en", "USD", string.Empty);
-            var result = await ReportFileWriter.WriteAsync(tempDirectory, report, options, CancellationToken.None);
+            var result = await ReportFileWriter.WriteAsync(tempDirectory, report, options, cancellationToken);
 
             Assert.True(File.Exists(result.JsonPath));
             Assert.True(File.Exists(result.MarkdownPath));
 
-            var json = await File.ReadAllTextAsync(result.JsonPath);
-            var markdown = await File.ReadAllTextAsync(result.MarkdownPath);
+            var json = await File.ReadAllTextAsync(result.JsonPath, cancellationToken);
+            var markdown = await File.ReadAllTextAsync(result.MarkdownPath, cancellationToken);
 
             Assert.Contains("\"schemaVersion\"", json);
             Assert.Contains("# Price Scout Report", markdown);
@@ -62,6 +63,7 @@ public sealed class ReportFileWriterTests
     [Fact]
     public async Task WriteAsync_AppendsSuffix_WhenBaseNameAlreadyExists()
     {
+        var cancellationToken = TestContext.Current.CancellationToken;
         var tempDirectory = Path.Combine(Path.GetTempPath(), "price-scout-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDirectory);
 
@@ -69,8 +71,8 @@ public sealed class ReportFileWriterTests
         {
             var options = new CliOptions("Example Product", tempDirectory, "UA", "en", "USD", string.Empty);
 
-            var first = await ReportFileWriter.WriteAsync(tempDirectory, CreateReport("2026-05-12T00:00:00Z"), options, CancellationToken.None);
-            var second = await ReportFileWriter.WriteAsync(tempDirectory, CreateReport("2026-05-12T00:00:00Z"), options, CancellationToken.None);
+            var first = await ReportFileWriter.WriteAsync(tempDirectory, CreateReport("2026-05-12T00:00:00Z"), options, cancellationToken);
+            var second = await ReportFileWriter.WriteAsync(tempDirectory, CreateReport("2026-05-12T00:00:00Z"), options, cancellationToken);
 
             Assert.NotEqual(first.JsonPath, second.JsonPath);
             Assert.EndsWith("-2.json", second.JsonPath, StringComparison.OrdinalIgnoreCase);
