@@ -16,12 +16,10 @@ public static class ReportFileWriter
         var processed = ReportPostProcessor.Process(report, options);
         var timestamp = ResolveTimestamp(processed);
         var slug = SlugGenerator.Generate(options.SearchText);
-        var baseName = $"{timestamp}_{slug}";
 
         Directory.CreateDirectory(outputDirectory);
 
-        var jsonPath = Path.Combine(outputDirectory, $"{baseName}.json");
-        var markdownPath = Path.Combine(outputDirectory, $"{baseName}.md");
+        var (jsonPath, markdownPath) = ResolveUniquePaths(outputDirectory, timestamp, slug);
 
         var json = JsonSerializer.Serialize(processed, CreateJsonOptions());
         var markdown = MarkdownReportWriter.Write(processed);
@@ -39,6 +37,26 @@ public static class ReportFileWriter
         }
 
         return DateTime.UtcNow.ToString("yyyy-MM-dd_HHmmss", CultureInfo.InvariantCulture);
+    }
+
+    private static (string jsonPath, string markdownPath) ResolveUniquePaths(string outputDirectory, string timestamp, string slug)
+    {
+        var baseName = $"{timestamp}_{slug}";
+        var attempt = 1;
+
+        while (true)
+        {
+            var suffix = attempt == 1 ? string.Empty : $"-{attempt}";
+            var jsonPath = Path.Combine(outputDirectory, $"{baseName}{suffix}.json");
+            var markdownPath = Path.Combine(outputDirectory, $"{baseName}{suffix}.md");
+
+            if (!File.Exists(jsonPath) && !File.Exists(markdownPath))
+            {
+                return (jsonPath, markdownPath);
+            }
+
+            attempt++;
+        }
     }
 
     private static JsonSerializerOptions CreateJsonOptions() =>

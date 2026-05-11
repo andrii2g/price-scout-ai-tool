@@ -1,3 +1,4 @@
+using System.Globalization;
 using PriceScout.Cli.Domain;
 
 namespace PriceScout.Cli.Processing;
@@ -13,6 +14,10 @@ public static class ReportPostProcessor
         processed.Run.Country = options.Country;
         processed.Run.Language = options.Language;
         processed.Run.Currency = options.Currency;
+        processed.Run.GeneratedAtUtc = NormalizeGeneratedAtUtc(processed.Run.GeneratedAtUtc);
+        processed.Run.Summary = string.IsNullOrWhiteSpace(processed.Run.Summary)
+            ? "No summary was returned by the model."
+            : processed.Run.Summary;
 
         NormalizeOffers(processed.RealMatches, "R");
         NormalizeOffers(processed.StrangeDeviations, "D");
@@ -70,4 +75,14 @@ public static class ReportPostProcessor
             .Any();
 
     private static decimal Clamp01(decimal value) => Math.Clamp(value, 0m, 1m);
+
+    private static string NormalizeGeneratedAtUtc(string value)
+    {
+        if (DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsed))
+        {
+            return parsed.UtcDateTime.ToString("O", CultureInfo.InvariantCulture);
+        }
+
+        return DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+    }
 }

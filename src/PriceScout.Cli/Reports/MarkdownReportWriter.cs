@@ -52,14 +52,19 @@ public static class MarkdownReportWriter
         builder.AppendLine($"- IQR: {report.PriceStats.IqrTotalPrice}");
         builder.AppendLine();
 
+        builder.AppendLine("## Ranked Real-Match Prices");
+        builder.AppendLine();
+        AppendPriceTable(builder, report.RealMatches);
+        builder.AppendLine();
+
         builder.AppendLine("## Real Matches");
         builder.AppendLine();
-        AppendOfferTable(builder, report.RealMatches);
+        AppendOfferTable(builder, report.RealMatches, includeSignals: false);
         builder.AppendLine();
 
         builder.AppendLine("## Strange Deviations");
         builder.AppendLine();
-        AppendOfferTable(builder, report.StrangeDeviations);
+        AppendOfferTable(builder, report.StrangeDeviations, includeSignals: true);
         builder.AppendLine();
 
         builder.AppendLine("## Sources");
@@ -94,7 +99,31 @@ public static class MarkdownReportWriter
         return builder.ToString();
     }
 
-    private static void AppendOfferTable(StringBuilder builder, List<ProductOffer> offers)
+    private static void AppendPriceTable(StringBuilder builder, List<ProductOffer> offers)
+    {
+        var pricedOffers = offers
+            .Where(static x => x.Price.TotalAmount > 0)
+            .OrderBy(static x => x.Price.TotalAmount)
+            .ToList();
+
+        if (pricedOffers.Count == 0)
+        {
+            builder.AppendLine("No known real-match prices available.");
+            return;
+        }
+
+        builder.AppendLine("| Rank | ID | Title | Seller | Total | Currency | Match | Risk |");
+        builder.AppendLine("| ---: | --- | --- | --- | ---: | --- | ---: | --- |");
+
+        for (var i = 0; i < pricedOffers.Count; i++)
+        {
+            var offer = pricedOffers[i];
+            builder.AppendLine(
+                $"| {i + 1} | {Escape(offer.Id)} | {Escape(offer.Title)} | {Escape(offer.Seller)} | {offer.Price.TotalAmount} | {Escape(offer.Price.Currency)} | {offer.Match.Score} | {Escape(offer.Risk.Level)} |");
+        }
+    }
+
+    private static void AppendOfferTable(StringBuilder builder, List<ProductOffer> offers, bool includeSignals)
     {
         if (offers.Count == 0)
         {
@@ -102,13 +131,31 @@ public static class MarkdownReportWriter
             return;
         }
 
-        builder.AppendLine("| ID | Title | Seller | Total | Currency | Match | Risk | Link |");
-        builder.AppendLine("| --- | --- | --- | ---: | --- | ---: | --- | --- |");
+        builder.AppendLine(includeSignals
+            ? "| ID | Title | Seller | Condition | Availability | Price | Shipping | Total | Currency | Match | Risk | Signals | Link |"
+            : "| ID | Title | Seller | Condition | Availability | Price | Shipping | Total | Currency | Match | Risk | Link |");
+        builder.AppendLine(includeSignals
+            ? "| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | ---: | --- | --- | --- |"
+            : "| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | ---: | --- | --- |");
 
         foreach (var offer in offers)
         {
-            builder.AppendLine(
-                $"| {Escape(offer.Id)} | {Escape(offer.Title)} | {Escape(offer.Seller)} | {offer.Price.TotalAmount} | {Escape(offer.Price.Currency)} | {offer.Match.Score} | {Escape(offer.Risk.Level)} | {FormatUrl(offer.Url)} |");
+            var row =
+                $"| {Escape(offer.Id)} | {Escape(offer.Title)} | {Escape(offer.Seller)} | {Escape(offer.Condition)} | {Escape(offer.Availability)} | {offer.Price.Amount} | {offer.Price.ShippingAmount} | {offer.Price.TotalAmount} | {Escape(offer.Price.Currency)} | {offer.Match.Score} | {Escape(offer.Risk.Level)} |";
+
+            if (includeSignals)
+            {
+                row += $" {Escape(string.Join(", ", offer.Risk.Signals))} |";
+            }
+
+            row += $" {FormatUrl(offer.Url)} |";
+            builder.AppendLine(row);
+            builder.AppendLine();
+            builder.AppendLine($"Reasons: {Escape(offer.Risk.Explanation)}");
+            builder.AppendLine($"Matched terms: {FormatList(offer.Match.MatchedTerms)}");
+            builder.AppendLine($"Missing terms: {FormatList(offer.Match.MissingTerms)}");
+            builder.AppendLine($"Variant notes: {Escape(offer.Match.VariantNotes)}");
+            builder.AppendLine();
         }
     }
 

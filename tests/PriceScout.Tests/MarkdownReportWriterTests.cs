@@ -37,6 +37,31 @@ public sealed class MarkdownReportWriterTests
         Assert.Contains("&lt;script&gt;alert(1)&lt;/script&gt;", markdown);
     }
 
+    [Fact]
+    public void Write_IncludesRankedPriceSection_AndOfferDetails()
+    {
+        var report = CreateReport();
+        report.RealMatches.Add(new ProductOffer
+        {
+            Id = "R1",
+            Title = "Offer",
+            Seller = "Seller",
+            Condition = "new",
+            Availability = "in_stock",
+            Url = "https://example.com/product",
+            Price = new PriceInfo { Amount = 9m, ShippingAmount = 1m, TotalAmount = 10m, Currency = "USD" },
+            Match = new MatchInfo { Score = 0.9m, MatchedTerms = ["Brand"], MissingTerms = ["Model"], VariantNotes = "Exact variant" },
+            Risk = new RiskInfo { Level = "low", Explanation = "Looks good" }
+        });
+
+        var markdown = MarkdownReportWriter.Write(report);
+
+        Assert.Contains("## Ranked Real-Match Prices", markdown);
+        Assert.Contains("Reasons: Looks good", markdown);
+        Assert.Contains("Matched terms: Brand", markdown);
+        Assert.Contains("[https://example.com/product](https://example.com/product)", markdown);
+    }
+
     private static PriceScoutReport CreateReport() =>
         new()
         {
