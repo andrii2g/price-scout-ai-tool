@@ -53,11 +53,29 @@ public sealed class MarkdownReportWriterTests
             Match = new MatchInfo { Score = 0.9m, MatchedTerms = ["Brand"], MissingTerms = ["Model"], VariantNotes = "Exact variant" },
             Risk = new RiskInfo { Level = "low", Explanation = "Looks good" }
         });
+        report.RealMatches.Add(new ProductOffer
+        {
+            Id = "R2",
+            Title = "Offer 2",
+            Seller = "Seller 2",
+            Condition = "new",
+            Availability = "in_stock",
+            Url = "https://example.com/product-2",
+            Price = new PriceInfo { Amount = 10m, ShippingAmount = 2m, TotalAmount = 12m, Currency = "USD" },
+            Match = new MatchInfo { Score = 0.8m, MatchedTerms = ["Brand 2"], MissingTerms = ["Model 2"], VariantNotes = "Close variant" },
+            Risk = new RiskInfo { Level = "medium", Explanation = "Review carefully" }
+        });
 
         var markdown = MarkdownReportWriter.Write(report);
 
         Assert.Contains("## Ranked Real-Match Prices", markdown);
+        Assert.Contains("| R1 | Offer | Seller |", markdown);
+        Assert.Contains("| R2 | Offer 2 | Seller 2 |", markdown);
+        Assert.Contains("### Real Match Details", markdown);
+        Assert.Contains("- R1: Offer", markdown);
+        Assert.Contains("- R2: Offer 2", markdown);
         Assert.Contains("Reasons: Looks good", markdown);
+        Assert.Contains("Reasons: Review carefully", markdown);
         Assert.Contains("Matched terms: Brand", markdown);
         Assert.Contains("[https://example.com/product](https://example.com/product)", markdown);
     }

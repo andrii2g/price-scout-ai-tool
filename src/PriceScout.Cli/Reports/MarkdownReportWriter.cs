@@ -59,12 +59,12 @@ public static class MarkdownReportWriter
 
         builder.AppendLine("## Real Matches");
         builder.AppendLine();
-        AppendOfferTable(builder, report.RealMatches, includeSignals: false);
+        AppendOfferSection(builder, report.RealMatches, includeSignals: false, detailHeading: "### Real Match Details");
         builder.AppendLine();
 
         builder.AppendLine("## Strange Deviations");
         builder.AppendLine();
-        AppendOfferTable(builder, report.StrangeDeviations, includeSignals: true);
+        AppendOfferSection(builder, report.StrangeDeviations, includeSignals: true, detailHeading: "### Strange Deviation Details");
         builder.AppendLine();
 
         builder.AppendLine("## Sources");
@@ -123,7 +123,7 @@ public static class MarkdownReportWriter
         }
     }
 
-    private static void AppendOfferTable(StringBuilder builder, List<ProductOffer> offers, bool includeSignals)
+    private static void AppendOfferSection(StringBuilder builder, List<ProductOffer> offers, bool includeSignals, string detailHeading)
     {
         if (offers.Count == 0)
         {
@@ -150,11 +150,25 @@ public static class MarkdownReportWriter
 
             row += $" {FormatUrl(offer.Url)} |";
             builder.AppendLine(row);
-            builder.AppendLine();
-            builder.AppendLine($"Reasons: {Escape(offer.Risk.Explanation)}");
-            builder.AppendLine($"Matched terms: {FormatList(offer.Match.MatchedTerms)}");
-            builder.AppendLine($"Missing terms: {FormatList(offer.Match.MissingTerms)}");
-            builder.AppendLine($"Variant notes: {Escape(offer.Match.VariantNotes)}");
+        }
+
+        builder.AppendLine();
+        builder.AppendLine(detailHeading);
+        builder.AppendLine();
+
+        foreach (var offer in offers)
+        {
+            builder.AppendLine($"- {Escape(offer.Id)}: {Escape(offer.Title)}");
+            builder.AppendLine($"  Reasons: {Escape(offer.Risk.Explanation)}");
+            builder.AppendLine($"  Matched terms: {FormatList(offer.Match.MatchedTerms)}");
+            builder.AppendLine($"  Missing terms: {FormatList(offer.Match.MissingTerms)}");
+            builder.AppendLine($"  Variant notes: {Escape(offer.Match.VariantNotes)}");
+
+            if (includeSignals)
+            {
+                builder.AppendLine($"  Signals: {FormatList(offer.Risk.Signals)}");
+            }
+
             builder.AppendLine();
         }
     }
