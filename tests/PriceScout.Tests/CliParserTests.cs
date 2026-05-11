@@ -34,7 +34,7 @@ public sealed class CliParserTests
         var result = CliParser.Parse(["--search", "abc", "--unknown"]);
 
         Assert.False(result.IsSuccess);
-        Assert.Contains("Unknown option", result.ErrorMessage);
+        Assert.Contains("Unrecognized command or argument", result.ErrorMessage);
     }
 
     [Fact]

@@ -1,9 +1,20 @@
+using System.CommandLine;
+
 namespace PriceScout.Cli;
 
 public static class CliParser
 {
     private const string DefaultOutputDirectory = "./reports";
     private const string DefaultLanguage = "en";
+
+    private static readonly Option<string?> SearchOption = CreateOptionalStringOption("--search", "Product/item description to research.");
+    private static readonly Option<string?> SearchAliasOption = CreateOptionalStringOption("--in", "Alias for --search.");
+    private static readonly Option<string> OutputOption = CreateOptionWithDefault("--out", DefaultOutputDirectory, "Output directory.");
+    private static readonly Option<string> CountryOption = CreateOptionWithDefault("--country", string.Empty, "Country hint such as UA, PL, DE, US.");
+    private static readonly Option<string> LanguageOption = CreateOptionWithDefault("--language", DefaultLanguage, "Preferred language.");
+    private static readonly Option<string> CurrencyOption = CreateOptionWithDefault("--currency", string.Empty, "Preferred currency such as UAH, EUR, USD.");
+    private static readonly Option<string> OpenAiApiKeyOption = CreateOptionWithDefault("--openai-api-key", string.Empty, "OpenAI API key. Overrides config and environment.");
+    private static readonly RootCommand RootCommand = CreateRootCommand();
 
     public static CliParseResult Parse(string[] args)
     {
@@ -12,80 +23,19 @@ public static class CliParser
             return Failure("No arguments were provided.", showUsage: true);
         }
 
-        string? search = null;
-        string? searchAlias = null;
-        string outputDirectory = DefaultOutputDirectory;
-        string country = string.Empty;
-        string language = DefaultLanguage;
-        string currency = string.Empty;
-        string openAiApiKey = string.Empty;
-
-        for (var i = 0; i < args.Length; i++)
+        var parseResult = RootCommand.Parse(args);
+        if (parseResult.Errors.Count > 0)
         {
-            switch (args[i])
-            {
-                case "--help":
-                    return Failure(null, showUsage: true);
-                case "--search":
-                    if (!TryReadValue(args, ref i, out var searchValue))
-                    {
-                        return Failure("Missing value for --search.", showUsage: true);
-                    }
-
-                    search = searchValue;
-                    break;
-                case "--in":
-                    if (!TryReadValue(args, ref i, out var inValue))
-                    {
-                        return Failure("Missing value for --in.", showUsage: true);
-                    }
-
-                    searchAlias = inValue;
-                    break;
-                case "--out":
-                    if (!TryReadValue(args, ref i, out var outValue))
-                    {
-                        return Failure("Missing value for --out.", showUsage: true);
-                    }
-
-                    outputDirectory = outValue;
-                    break;
-                case "--country":
-                    if (!TryReadValue(args, ref i, out var countryValue))
-                    {
-                        return Failure("Missing value for --country.", showUsage: true);
-                    }
-
-                    country = countryValue.ToUpperInvariant();
-                    break;
-                case "--language":
-                    if (!TryReadValue(args, ref i, out var languageValue))
-                    {
-                        return Failure("Missing value for --language.", showUsage: true);
-                    }
-
-                    language = languageValue;
-                    break;
-                case "--currency":
-                    if (!TryReadValue(args, ref i, out var currencyValue))
-                    {
-                        return Failure("Missing value for --currency.", showUsage: true);
-                    }
-
-                    currency = currencyValue.ToUpperInvariant();
-                    break;
-                case "--openai-api-key":
-                    if (!TryReadValue(args, ref i, out var apiKeyValue))
-                    {
-                        return Failure("Missing value for --openai-api-key.", showUsage: true);
-                    }
-
-                    openAiApiKey = apiKeyValue;
-                    break;
-                default:
-                    return Failure($"Unknown option: {args[i]}", showUsage: true);
-            }
+            return Failure(parseResult.Errors[0].Message, showUsage: true);
         }
+
+        if (args.Any(static arg => arg is "--help" or "-h"))
+        {
+            return Failure(null, showUsage: true);
+        }
+
+        var search = parseResult.GetValue(SearchOption);
+        var searchAlias = parseResult.GetValue(SearchAliasOption);
 
         if (search is not null && searchAlias is not null && !string.Equals(search, searchAlias, StringComparison.Ordinal))
         {
@@ -104,27 +54,17 @@ public static class CliParser
             return Failure("Product description must be at least 3 characters after trimming.", showUsage: true);
         }
 
-        if (string.IsNullOrWhiteSpace(outputDirectory))
-        {
-            outputDirectory = DefaultOutputDirectory;
-        }
-
-        if (string.IsNullOrWhiteSpace(language))
-        {
-            language = DefaultLanguage;
-        }
-
         return new CliParseResult(
-            true,
-            new CliOptions(
+            IsSuccess: true,
+            Options: new CliOptions(
                 SearchText: effectiveSearch,
-                OutputDirectory: outputDirectory.Trim(),
-                Country: country,
-                Language: language.Trim(),
-                Currency: currency,
-                OpenAiApiKey: openAiApiKey),
-            null,
-            false);
+                OutputDirectory: NormalizePath(parseResult.GetValue(OutputOption), DefaultOutputDirectory),
+                Country: NormalizeUpper(parseResult.GetValue(CountryOption)),
+                Language: NormalizePath(parseResult.GetValue(LanguageOption), DefaultLanguage),
+                Currency: NormalizeUpper(parseResult.GetValue(CurrencyOption)),
+                OpenAiApiKey: parseResult.GetValue(OpenAiApiKeyOption)?.Trim() ?? string.Empty),
+            ErrorMessage: null,
+            ShowUsage: false);
     }
 
     public static string GetUsageText() =>
@@ -144,17 +84,43 @@ public static class CliParser
           --help             Show usage information.
         """;
 
-    private static bool TryReadValue(string[] args, ref int index, out string value)
+    private static RootCommand CreateRootCommand()
     {
-        if (index + 1 >= args.Length)
-        {
-            value = string.Empty;
-            return false;
-        }
-
-        value = args[++index];
-        return true;
+        var command = new RootCommand("Generate JSON and Markdown price scouting reports from OpenAI research.");
+        command.Options.Add(SearchOption);
+        command.Options.Add(SearchAliasOption);
+        command.Options.Add(OutputOption);
+        command.Options.Add(CountryOption);
+        command.Options.Add(LanguageOption);
+        command.Options.Add(CurrencyOption);
+        command.Options.Add(OpenAiApiKeyOption);
+        return command;
     }
+
+    private static Option<string> CreateOptionWithDefault(string name, string defaultValue, string description)
+    {
+        var option = new Option<string>(name)
+        {
+            Description = description
+        };
+        option.DefaultValueFactory = _ => defaultValue;
+        return option;
+    }
+
+    private static Option<string?> CreateOptionalStringOption(string name, string description) =>
+        new(name)
+        {
+            Description = description
+        };
+
+    private static string NormalizePath(string? value, string fallback)
+    {
+        var trimmed = value?.Trim();
+        return string.IsNullOrWhiteSpace(trimmed) ? fallback : trimmed;
+    }
+
+    private static string NormalizeUpper(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToUpperInvariant();
 
     private static CliParseResult Failure(string? errorMessage, bool showUsage) =>
         new(
