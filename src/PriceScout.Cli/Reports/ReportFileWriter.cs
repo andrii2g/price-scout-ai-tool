@@ -7,7 +7,7 @@ namespace PriceScout.Cli.Reports;
 
 public static class ReportFileWriter
 {
-    public static async Task WriteAsync(
+    public static async Task<ReportWriteResult> WriteAsync(
         string outputDirectory,
         PriceScoutReport report,
         CliOptions options,
@@ -28,6 +28,7 @@ public static class ReportFileWriter
 
         await File.WriteAllTextAsync(jsonPath, json, cancellationToken);
         await File.WriteAllTextAsync(markdownPath, markdown, cancellationToken);
+        return new ReportWriteResult(jsonPath, markdownPath);
     }
 
     private static string ResolveTimestamp(PriceScoutReport report)
