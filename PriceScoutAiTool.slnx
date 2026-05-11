@@ -1,2 +1,8 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PriceScout.Cli/PriceScout.Cli.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PriceScout.Tests/PriceScout.Tests.csproj" />
+  </Folder>
 </Solution>

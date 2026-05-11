@@ -1,1 +1,3 @@
-﻿Console.WriteLine("Hello, World!");
+using PriceScout.Cli;
+
+return await App.RunAsync(args);
