@@ -6,14 +6,16 @@ public static class CliParser
 {
     private const string DefaultOutputDirectory = "./reports";
     private const string DefaultLanguage = "en";
+    private static readonly string DefaultSystemPromptRelativePath = Path.Combine("system-prompts", "general-item-search.txt");
 
     private static readonly Option<string?> SearchOption = CreateOptionalStringOption("--search", "Product/item description to research.");
     private static readonly Option<string?> SearchAliasOption = CreateOptionalStringOption("--in", "Alias for --search.");
-    private static readonly Option<string> OutputOption = CreateOptionWithDefault("--out", DefaultOutputDirectory, "Output directory.");
-    private static readonly Option<string> CountryOption = CreateOptionWithDefault("--country", string.Empty, "Country hint such as UA, PL, DE, US.");
-    private static readonly Option<string> LanguageOption = CreateOptionWithDefault("--language", DefaultLanguage, "Preferred language.");
-    private static readonly Option<string> CurrencyOption = CreateOptionWithDefault("--currency", string.Empty, "Preferred currency such as UAH, EUR, USD.");
-    private static readonly Option<string> OpenAiApiKeyOption = CreateOptionWithDefault("--openai-api-key", string.Empty, "OpenAI API key. Overrides config and environment.");
+    private static readonly Option<string> OutputOption = CreateOptionWithDefault("--out", static () => DefaultOutputDirectory, "Output directory.");
+    private static readonly Option<string> CountryOption = CreateOptionWithDefault("--country", static () => string.Empty, "Country hint such as UA, PL, DE, US.");
+    private static readonly Option<string> LanguageOption = CreateOptionWithDefault("--language", static () => DefaultLanguage, "Preferred language.");
+    private static readonly Option<string> CurrencyOption = CreateOptionWithDefault("--currency", static () => string.Empty, "Preferred currency such as UAH, EUR, USD.");
+    private static readonly Option<string> OpenAiApiKeyOption = CreateOptionWithDefault("--openai-api-key", static () => string.Empty, "OpenAI API key. Overrides config and environment.");
+    private static readonly Option<string> SystemPromptFileOption = CreateOptionWithDefault("--system-prompt-file", GetDefaultSystemPromptFile, "Path to the system prompt template file.");
     private static readonly RootCommand RootCommand = CreateRootCommand();
 
     public static CliParseResult Parse(string[] args)
@@ -62,7 +64,8 @@ public static class CliParser
                 Country: NormalizeUpper(parseResult.GetValue(CountryOption)),
                 Language: NormalizePath(parseResult.GetValue(LanguageOption), DefaultLanguage),
                 Currency: NormalizeUpper(parseResult.GetValue(CurrencyOption)),
-                OpenAiApiKey: parseResult.GetValue(OpenAiApiKeyOption)?.Trim() ?? string.Empty),
+                OpenAiApiKey: parseResult.GetValue(OpenAiApiKeyOption)?.Trim() ?? string.Empty,
+                SystemPromptFile: NormalizePath(parseResult.GetValue(SystemPromptFileOption), GetDefaultSystemPromptFile())),
             ErrorMessage: null,
             ShowUsage: false);
     }
@@ -70,8 +73,8 @@ public static class CliParser
     public static string GetUsageText() =>
         """
         Usage:
-          price-scout-ai-tool --search "<text>" [--out <path>] [--country <code>] [--language <code>] [--currency <code>] [--openai-api-key <key>]
-          price-scout-ai-tool --in "<text>" [--out <path>] [--country <code>] [--language <code>] [--currency <code>] [--openai-api-key <key>]
+          price-scout-ai-tool --search "<text>" [--out <path>] [--country <code>] [--language <code>] [--currency <code>] [--openai-api-key <key>] [--system-prompt-file <path>]
+          price-scout-ai-tool --in "<text>" [--out <path>] [--country <code>] [--language <code>] [--currency <code>] [--openai-api-key <key>] [--system-prompt-file <path>]
 
         Options:
           --search <text>    Product/item description to research.
@@ -81,6 +84,7 @@ public static class CliParser
           --language <code>  Preferred language. Default: en
           --currency <code>  Preferred currency such as UAH, EUR, USD.
           --openai-api-key   OpenAI API key. Overrides config and environment.
+          --system-prompt-file Path to the system prompt template file. Default: repo-root/system-prompts/general-item-search.txt
           --help             Show usage information.
         """;
 
@@ -94,16 +98,17 @@ public static class CliParser
         command.Options.Add(LanguageOption);
         command.Options.Add(CurrencyOption);
         command.Options.Add(OpenAiApiKeyOption);
+        command.Options.Add(SystemPromptFileOption);
         return command;
     }
 
-    private static Option<string> CreateOptionWithDefault(string name, string defaultValue, string description)
+    private static Option<string> CreateOptionWithDefault(string name, Func<string> defaultValueFactory, string description)
     {
         var option = new Option<string>(name)
         {
             Description = description
         };
-        option.DefaultValueFactory = _ => defaultValue;
+        option.DefaultValueFactory = _ => defaultValueFactory();
         return option;
     }
 
@@ -117,6 +122,31 @@ public static class CliParser
     {
         var trimmed = value?.Trim();
         return string.IsNullOrWhiteSpace(trimmed) ? fallback : trimmed;
+    }
+
+    private static string GetDefaultSystemPromptFile()
+    {
+        var repoRoot = FindRepositoryRoot();
+        return repoRoot is null
+            ? DefaultSystemPromptRelativePath
+            : Path.Combine(repoRoot.FullName, DefaultSystemPromptRelativePath);
+    }
+
+    private static DirectoryInfo? FindRepositoryRoot()
+    {
+        var current = new DirectoryInfo(Directory.GetCurrentDirectory());
+
+        while (current is not null)
+        {
+            if (Directory.Exists(Path.Combine(current.FullName, ".git")))
+            {
+                return current;
+            }
+
+            current = current.Parent;
+        }
+
+        return null;
     }
 
     private static string NormalizeUpper(string? value) =>

@@ -6,4 +6,5 @@ public sealed record CliOptions(
     string Country,
     string Language,
     string Currency,
-    string OpenAiApiKey);
+    string OpenAiApiKey,
+    string SystemPromptFile);

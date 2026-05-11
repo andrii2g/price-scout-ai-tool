@@ -25,8 +25,25 @@ dotnet run --project src/PriceScout.Cli -- \
   --country UA \
   --language uk \
   --currency UAH \
-  --out ./reports
+  --out ./reports \
+  --system-prompt-file ./system-prompts/general-item-search.txt
 ```
+
+By default, reports are written to `./reports` relative to the directory you run the command from.
+
+To always store reports in the repository-root `reports` folder, run the command from the repository root and pass:
+
+```bash
+--out ./reports
+```
+
+The default reusable system prompt template lives at:
+
+```text
+./system-prompts/general-item-search.txt
+```
+
+Copy that file to create item- or category-specific prompt variants, then pass the custom file with `--system-prompt-file`.
 
 You can also pass the key explicitly:
 

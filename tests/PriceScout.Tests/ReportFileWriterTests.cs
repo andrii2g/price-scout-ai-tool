@@ -35,7 +35,7 @@ public sealed class ReportFileWriterTests
                 }
             };
 
-            var options = new CliOptions("Example Product", tempDirectory, "UA", "en", "USD", string.Empty);
+            var options = new CliOptions("Example Product", tempDirectory, "UA", "en", "USD", string.Empty, string.Empty);
             var result = await ReportFileWriter.WriteAsync(tempDirectory, report, options, cancellationToken);
 
             Assert.True(File.Exists(result.JsonPath));
@@ -69,7 +69,7 @@ public sealed class ReportFileWriterTests
 
         try
         {
-            var options = new CliOptions("Example Product", tempDirectory, "UA", "en", "USD", string.Empty);
+            var options = new CliOptions("Example Product", tempDirectory, "UA", "en", "USD", string.Empty, string.Empty);
 
             var first = await ReportFileWriter.WriteAsync(tempDirectory, CreateReport("2026-05-12T00:00:00Z"), options, cancellationToken);
             var second = await ReportFileWriter.WriteAsync(tempDirectory, CreateReport("2026-05-12T00:00:00Z"), options, cancellationToken);

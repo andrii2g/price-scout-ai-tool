@@ -44,7 +44,7 @@ public static class OpenAiRequestFactory
                 new JsonObject
                 {
                     ["role"] = "system",
-                    ["content"] = PromptBuilder.BuildSystemPrompt()
+                    ["content"] = PromptBuilder.BuildSystemPrompt(options)
                 },
                 new JsonObject
                 {
