@@ -30,22 +30,6 @@ dotnet run --project src/PriceScout.Cli -- \
   --stream
 ```
 
-By default, reports are written to `./reports` relative to the directory you run the command from.
-
-To always store reports in the repository-root `reports` folder, run the command from the repository root and pass:
-
-```bash
---out ./reports
-```
-
-The default reusable system prompt template lives at:
-
-```text
-./system-prompts/general-item-search.txt
-```
-
-Copy that file to create item- or category-specific prompt variants, then pass the custom file with `--system-prompt-file`.
-
 If you want the CLI to feel more responsive, pass:
 
 ```bash
@@ -53,20 +37,6 @@ If you want the CLI to feel more responsive, pass:
 ```
 
 That enables server-sent events from the Responses API and shows progress messages for response creation, web search activity, structured-output generation, and completion. It does not expose private chain-of-thought.
-
-You can also pass the key explicitly:
-
-```bash
-dotnet run --project src/PriceScout.Cli -- \
-  --search "SONOFF Zigbee 3.0 USB Dongle Plus E" \
-  --openai-api-key "<your-key>"
-```
-
-For local debugging with user secrets:
-
-```bash
-dotnet user-secrets --project src/PriceScout.Cli set "OpenAI:ApiKey" "<your-key>"
-```
 
 ## Output
 
