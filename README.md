@@ -26,7 +26,8 @@ dotnet run --project src/PriceScout.Cli -- \
   --language uk \
   --currency UAH \
   --out ./reports \
-  --system-prompt-file ./system-prompts/general-item-search.txt
+  --system-prompt-file ./system-prompts/general-item-search.txt \
+  --stream
 ```
 
 By default, reports are written to `./reports` relative to the directory you run the command from.
@@ -44,6 +45,14 @@ The default reusable system prompt template lives at:
 ```
 
 Copy that file to create item- or category-specific prompt variants, then pass the custom file with `--system-prompt-file`.
+
+If you want the CLI to feel more responsive, pass:
+
+```bash
+--stream
+```
+
+That enables server-sent events from the Responses API and shows progress messages for response creation, web search activity, structured-output generation, and completion. It does not expose private chain-of-thought.
 
 You can also pass the key explicitly:
 

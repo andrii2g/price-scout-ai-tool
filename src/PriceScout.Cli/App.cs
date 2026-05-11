@@ -36,7 +36,10 @@ internal static class App
         {
             using var httpClient = new HttpClient();
             var openAiClient = new OpenAiResponsesClient(httpClient);
-            var rawResponseJson = await openAiClient.CreateReportAsync(options, CancellationToken.None);
+            var rawResponseJson = await openAiClient.CreateReportAsync(
+                options,
+                options.Stream ? static message => Console.Error.WriteLine(message) : null,
+                CancellationToken.None);
             var jsonText = ResponseJsonExtractor.ExtractOutputText(rawResponseJson);
             var report = JsonSerializer.Deserialize<PriceScoutReport>(jsonText, JsonOptions)
                 ?? throw new InvalidOperationException("Structured report JSON was empty or invalid.");

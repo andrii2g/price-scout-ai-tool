@@ -16,6 +16,7 @@ public static class CliParser
     private static readonly Option<string> CurrencyOption = CreateOptionWithDefault("--currency", static () => string.Empty, "Preferred currency such as UAH, EUR, USD.");
     private static readonly Option<string> OpenAiApiKeyOption = CreateOptionWithDefault("--openai-api-key", static () => string.Empty, "OpenAI API key. Overrides config and environment.");
     private static readonly Option<string> SystemPromptFileOption = CreateOptionWithDefault("--system-prompt-file", GetDefaultSystemPromptFile, "Path to the system prompt template file.");
+    private static readonly Option<bool> StreamOption = CreateBoolOption("--stream", "Stream OpenAI response progress via SSE.");
     private static readonly RootCommand RootCommand = CreateRootCommand();
 
     public static CliParseResult Parse(string[] args)
@@ -65,7 +66,8 @@ public static class CliParser
                 Language: NormalizePath(parseResult.GetValue(LanguageOption), DefaultLanguage),
                 Currency: NormalizeUpper(parseResult.GetValue(CurrencyOption)),
                 OpenAiApiKey: parseResult.GetValue(OpenAiApiKeyOption)?.Trim() ?? string.Empty,
-                SystemPromptFile: NormalizePath(parseResult.GetValue(SystemPromptFileOption), GetDefaultSystemPromptFile())),
+                SystemPromptFile: NormalizePath(parseResult.GetValue(SystemPromptFileOption), GetDefaultSystemPromptFile()),
+                Stream: parseResult.GetValue(StreamOption)),
             ErrorMessage: null,
             ShowUsage: false);
     }
@@ -73,8 +75,8 @@ public static class CliParser
     public static string GetUsageText() =>
         """
         Usage:
-          price-scout-ai-tool --search "<text>" [--out <path>] [--country <code>] [--language <code>] [--currency <code>] [--openai-api-key <key>] [--system-prompt-file <path>]
-          price-scout-ai-tool --in "<text>" [--out <path>] [--country <code>] [--language <code>] [--currency <code>] [--openai-api-key <key>] [--system-prompt-file <path>]
+          price-scout-ai-tool --search "<text>" [--out <path>] [--country <code>] [--language <code>] [--currency <code>] [--openai-api-key <key>] [--system-prompt-file <path>] [--stream]
+          price-scout-ai-tool --in "<text>" [--out <path>] [--country <code>] [--language <code>] [--currency <code>] [--openai-api-key <key>] [--system-prompt-file <path>] [--stream]
 
         Options:
           --search <text>    Product/item description to research.
@@ -85,6 +87,7 @@ public static class CliParser
           --currency <code>  Preferred currency such as UAH, EUR, USD.
           --openai-api-key   OpenAI API key. Overrides config and environment.
           --system-prompt-file Path to the system prompt template file. Default: repo-root/system-prompts/general-item-search.txt
+          --stream           Stream response progress via SSE.
           --help             Show usage information.
         """;
 
@@ -99,6 +102,7 @@ public static class CliParser
         command.Options.Add(CurrencyOption);
         command.Options.Add(OpenAiApiKeyOption);
         command.Options.Add(SystemPromptFileOption);
+        command.Options.Add(StreamOption);
         return command;
     }
 
@@ -113,6 +117,12 @@ public static class CliParser
     }
 
     private static Option<string?> CreateOptionalStringOption(string name, string description) =>
+        new(name)
+        {
+            Description = description
+        };
+
+    private static Option<bool> CreateBoolOption(string name, string description) =>
         new(name)
         {
             Description = description

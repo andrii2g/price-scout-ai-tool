@@ -29,7 +29,7 @@ public static class OpenAiRequestFactory
             };
         }
 
-        return new JsonObject
+        var payload = new JsonObject
         {
             ["model"] = settings.Model,
             ["reasoning"] = new JsonObject
@@ -63,5 +63,12 @@ public static class OpenAiRequestFactory
                 }
             }
         };
+
+        if (options.Stream)
+        {
+            payload["stream"] = true;
+        }
+
+        return payload;
     }
 }

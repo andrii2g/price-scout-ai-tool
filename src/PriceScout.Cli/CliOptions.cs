@@ -7,4 +7,5 @@ public sealed record CliOptions(
     string Language,
     string Currency,
     string OpenAiApiKey,
-    string SystemPromptFile);
+    string SystemPromptFile,
+    bool Stream);

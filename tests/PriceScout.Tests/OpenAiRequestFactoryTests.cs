@@ -13,7 +13,7 @@ public sealed class OpenAiRequestFactoryTests
         try
         {
             var payload = (JsonObject)OpenAiRequestFactory.Create(
-                new CliOptions("item", "./reports", "UA", "uk", "UAH", string.Empty, promptFile),
+                new CliOptions("item", "./reports", "UA", "uk", "UAH", string.Empty, promptFile, false),
                 new OpenAiSettings("key", "gpt-5.5", "https://api.openai.com"));
 
             var tools = payload["tools"]!.AsArray();
@@ -36,7 +36,7 @@ public sealed class OpenAiRequestFactoryTests
         try
         {
             var payload = (JsonObject)OpenAiRequestFactory.Create(
-                new CliOptions("item", "./reports", string.Empty, "en", string.Empty, string.Empty, promptFile),
+                new CliOptions("item", "./reports", string.Empty, "en", string.Empty, string.Empty, promptFile, false),
                 new OpenAiSettings("key", "gpt-5.5", "https://api.openai.com"));
 
             var tool = payload["tools"]!.AsArray()[0]!.AsObject();
@@ -57,7 +57,7 @@ public sealed class OpenAiRequestFactoryTests
         try
         {
             var payload = (JsonObject)OpenAiRequestFactory.Create(
-                new CliOptions("item", "./reports", string.Empty, "en", string.Empty, string.Empty, promptFile),
+                new CliOptions("item", "./reports", string.Empty, "en", string.Empty, string.Empty, promptFile, false),
                 new OpenAiSettings("key", "gpt-test", "https://api.openai.com"));
 
             Assert.Equal("gpt-test", payload["model"]!.GetValue<string>());
@@ -76,7 +76,7 @@ public sealed class OpenAiRequestFactoryTests
         try
         {
             var payload = (JsonObject)OpenAiRequestFactory.Create(
-                new CliOptions("item", "./reports", string.Empty, "en", string.Empty, string.Empty, promptFile),
+                new CliOptions("item", "./reports", string.Empty, "en", string.Empty, string.Empty, promptFile, false),
                 new OpenAiSettings("key", "gpt-test", "https://api.openai.com"));
 
             var input = payload["input"]!.AsArray();
@@ -95,5 +95,24 @@ public sealed class OpenAiRequestFactoryTests
         var path = Path.Combine(Path.GetTempPath(), $"price-scout-prompt-{Guid.NewGuid():N}.txt");
         File.WriteAllText(path, content);
         return path;
+    }
+
+    [Fact]
+    public void Create_SetsStreamFlag_WhenRequested()
+    {
+        var promptFile = CreatePromptFile("test system prompt");
+
+        try
+        {
+            var payload = (JsonObject)OpenAiRequestFactory.Create(
+                new CliOptions("item", "./reports", string.Empty, "en", string.Empty, string.Empty, promptFile, true),
+                new OpenAiSettings("key", "gpt-test", "https://api.openai.com"));
+
+            Assert.True(payload["stream"]!.GetValue<bool>());
+        }
+        finally
+        {
+            File.Delete(promptFile);
+        }
     }
 }

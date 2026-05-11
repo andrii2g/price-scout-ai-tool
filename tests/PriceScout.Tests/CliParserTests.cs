@@ -19,6 +19,7 @@ public sealed class CliParserTests
         Assert.Equal(string.Empty, result.Options.Currency);
         Assert.Equal(string.Empty, result.Options.OpenAiApiKey);
         Assert.Equal(expectedSystemPromptFile, result.Options.SystemPromptFile);
+        Assert.False(result.Options.Stream);
     }
 
     [Fact]
@@ -55,6 +56,15 @@ public sealed class CliParserTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal("./system-prompts/custom.txt", result.Options!.SystemPromptFile);
+    }
+
+    [Fact]
+    public void Parse_StreamOption_IsAccepted()
+    {
+        var result = CliParser.Parse(["--search", "abc", "--stream"]);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Options!.Stream);
     }
 
     private static string FindRepoRootSystemPromptFile()
