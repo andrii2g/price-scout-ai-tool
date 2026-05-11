@@ -5,3 +5,7 @@
 /.dotnet-home
 /src/PriceScout.Cli/obj/Debug/net10.0
 /tests/PriceScout.Tests/obj/Debug/net10.0
+/.vs/PriceScoutAiTool.slnx
+/src/PriceScout.Cli/obj
+/tests/PriceScout.Tests/bin/Debug/net10.0
+/tests/PriceScout.Tests/obj
